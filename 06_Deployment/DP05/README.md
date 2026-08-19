@@ -1,6 +1,6 @@
 # AIFFEL Campus Online Code Peer Review Template
-- 코더 :
-- 리뷰어 :
+- 코더 : 천세문
+- 리뷰어 : 채진현
 
 # PRT(Peer Review Template)
 
