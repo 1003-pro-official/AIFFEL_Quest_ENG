@@ -13,7 +13,7 @@
 ### 1.1 Swagger UI 인터랙티브 API 테스트 (섹션 6.8)
 * `http://localhost:8000/docs`의 Swagger UI에서 `POST /predict/image` 엔드포인트를 호출하여 인증 헤더(`X-API-Key: test-key-001`)와 이미지 파일(`digit.png`)을 전송하고, 정상적으로 `200 OK` 응답(`{"success": true, "label": "7", "confidence": 1.0, "user": "사용자A"}`)을 수신한 실행 화면입니다.
 
-![Swagger UI API Key 인증 및 이미지 추론 실행 화면](../images/스크린샷%202026-08-20%20121049.png)
+![Swagger UI API Key 인증 및 이미지 추론 실행 화면](./images/day6_sec6_swagger_test.png)
 
 ---
 
