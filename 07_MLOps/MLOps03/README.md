@@ -1,43 +1,110 @@
-# AIFFEL Campus Online Code Peer Review Templete
-- 코더 : 코더의 이름을 작성하세요.
-- 리뷰어 : 리뷰어의 이름을 작성하세요.
+# Day 03: Docker 컨테이너화 & GCP 클라우드 배포 & Streamlit 연동
 
+## 📌 3일차 실습 자료
+* 📓 실습 주피터 노트북: [`fsdl_day2.ipynb`](./fsdl_day2.ipynb)
+* 📄 도커 빌드 파일: [`Dockerfile`](./Dockerfile)
+* 📄 모델 학습 스크립트: [`train.py`](./train.py)
+* 📄 FastAPI 서빙 API: [`main.py`](./main.py)
+* 📦 모델 직렬화 파일: [`model.joblib`](./model.joblib)
+* 📄 Streamlit 대시보드: [`app_streamlit.py`](./app_streamlit.py)
+* 📄 라이브러리 목록: [`requirements.txt`](./requirements.txt)
 
-# PRT(Peer Review Template)
-- [ ]  **1. 주어진 문제를 해결하는 완성된 코드가 제출되었나요?**
-    - 문제에서 요구하는 최종 결과물이 첨부되었는지 확인
-        - 중요! 해당 조건을 만족하는 부분을 캡쳐해 근거로 첨부
-    
-- [ ]  **2. 전체 코드에서 가장 핵심적이거나 가장 복잡하고 이해하기 어려운 부분에 작성된 
-주석 또는 doc string을 보고 해당 코드가 잘 이해되었나요?**
-    - 해당 코드 블럭을 왜 핵심적이라고 생각하는지 확인
-    - 해당 코드 블럭에 doc string/annotation이 달려 있는지 확인
-    - 해당 코드의 기능, 존재 이유, 작동 원리 등을 기술했는지 확인
-    - 주석을 보고 코드 이해가 잘 되었는지 확인
-        - 중요! 잘 작성되었다고 생각되는 부분을 캡쳐해 근거로 첨부
-        
-- [ ]  **3. 에러가 난 부분을 디버깅하여 문제를 해결한 기록을 남겼거나
-새로운 시도 또는 추가 실험을 수행해봤나요?**
-    - 문제 원인 및 해결 과정을 잘 기록하였는지 확인
-    - 프로젝트 평가 기준에 더해 추가적으로 수행한 나만의 시도, 
-    실험이 기록되어 있는지 확인
-        - 중요! 잘 작성되었다고 생각되는 부분을 캡쳐해 근거로 첨부
-        
-- [ ]  **4. 회고를 잘 작성했나요?**
-    - 주어진 문제를 해결하는 완성된 코드 내지 프로젝트 결과물에 대해
-    배운점과 아쉬운점, 느낀점 등이 기록되어 있는지 확인
-    - 전체 코드 실행 플로우를 그래프로 그려서 이해를 돕고 있는지 확인
-        - 중요! 잘 작성되었다고 생각되는 부분을 캡쳐해 근거로 첨부
-        
-- [ ]  **5. 코드가 간결하고 효율적인가요?**
-    - 파이썬 스타일 가이드 (PEP8) 를 준수하였는지 확인
-    - 코드 중복을 최소화하고 범용적으로 사용할 수 있도록 함수화/모듈화했는지 확인
-        - 중요! 잘 작성되었다고 생각되는 부분을 캡쳐해 근거로 첨부
+---
 
+## 🎯 3일차 핵심 목표
+어제(2일차) 만들었던 내부망 로컬 서빙 코드를 **Docker Hub에 이미지로 패키징**하여 올리고, **GCP(Google Cloud Platform) 무료 가상머신(e2-micro)**을 대여하여 전 세계 누구나 접속 가능한 퍼블릭 API로 배포한 뒤, **Streamlit 프론트엔드 웹 앱**과 연동합니다.
 
-# 회고(참고 링크 및 코드 개선)
+---
+
+## 🚀 1. Dockerfile 작성
+
+```dockerfile
+# 1. 베이스 이미지 설정 (가벼운 파이썬 버전)
+FROM python:3.13-slim
+
+# 2. 작업 디렉토리 설정
+WORKDIR /root/mlops_serving
+
+# 3. 필수 라이브러리 설치
+RUN pip install --no-cache-dir fastapi uvicorn scikit-learn joblib python-multipart
+
+# 4. 모델 파일과 API 코드를 컨테이너 안으로 복사
+COPY main.py .
+COPY model.joblib .
+
+# 5. 서버 실행 명령 (8000 포트)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
-# 리뷰어의 회고를 작성합니다.
-# 코드 리뷰 시 참고한 링크가 있다면 링크와 간략한 설명을 첨부합니다.
-# 코드 리뷰를 통해 개선한 코드가 있다면 코드와 간략한 설명을 첨부합니다.
+
+---
+
+## 🐳 2. 로컬에서 Docker Hub 빌드 & 푸시
+
+```bash
+# 1. 도커 허브 로그인
+docker login
+
+# 2. 도커 이미지 빌드 (마침표 . 포함)
+docker build -t 1003pro/iris-classifier:v1 .
+
+# (Mac 실리콘 M1/M2/M3의 경우 GCP 호환 빌드)
+# docker build --platform linux/amd64 -t 1003pro/iris-classifier:v1 .
+
+# 3. 도커 허브로 이미지 푸시
+docker push 1003pro/iris-classifier:v1
 ```
+
+---
+
+## ☁️ 3. GCP Compute Engine VM 인스턴스 생성
+
+1. [GCP 콘솔](https://console.cloud.google.com/) 접속 ➔ **Compute Engine ➔ VM 인스턴스 ➔ 인스턴스 만들기**
+2. **권장 무료 티어 설정**:
+   * **리전**: `us-central1 (아이오와)` (무료 사용 지원)
+   * **머신 구성**: `E2` ➔ `e2-micro` (2 vCPU, 1GB 메모리)
+   * **OS & 디스크**: Ubuntu 22.04 LTS (x86_64), 표준 영구 디스크 10GB
+   * **방화벽**: **`HTTP 트래픽 허용 (80 포트)` 체크 ✅**
+   * ⚠️ **스냅샷 일정**: `백업 없음` (과금 방지)
+3. **만들기** 클릭
+
+---
+
+## 💻 4. GCP VM (SSH) 접속 및 컨테이너 실행
+
+GCP VM 목록에서 **SSH** 버튼을 눌러 브라우저 터미널 창을 엽니다.
+
+```bash
+# 1. 도커 설치
+sudo apt-get update && sudo apt-get install -y docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 2. 도커 허브에서 이미지 pull
+sudo docker pull 1003pro/iris-classifier:v1
+
+# 3. 컨테이너 백그라운드 실행 (외부 80 포트 -> 내부 8000 포트)
+sudo docker run -d -p 80:8000 --name iris-api 1003pro/iris-classifier:v1
+
+# 4. 실행 상태 확인
+sudo docker ps
+```
+
+---
+
+## 🌐 5. 배포 확인 및 Streamlit 프론트엔드 연동
+
+1. **Swagger UI 확인**:
+   * 브라우저에서 `http://[본인-VM-외부-IP]/docs` 접속 (예: `http://35.255.177.177/docs`)
+   * ⚠️ 반드시 `http://`로 접속 (`https://` 아님)
+
+2. **Streamlit 대시보드 실행 (로컬 터미널)**:
+   ```bash
+   streamlit run app_streamlit.py
+   ```
+   * 사이드바에 본인의 **GCP VM 외부 IP**를 입력하고 꽃받침/꽃잎 수치를 조절하여 예측 결과를 실시간으로 확인합니다.
+
+---
+
+## ⚠️ 6. 실습 종료 후 과금 방지 체크리스트
+* 실습을 마치면 GCP 콘솔에서 VM 인스턴스를 **[중지(Stop)]** 또는 **[삭제(Delete)]** 합니다.
+* **Compute Engine ➔ 스냅샷 ➔ 스냅샷 일정** 메뉴에서 등록된 백업 일정이 있다면 삭제합니다.
